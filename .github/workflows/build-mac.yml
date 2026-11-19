@@ -1,0 +1,33 @@
+name: Build macOS (universal: Intel + Apple Silicon)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j 4
+
+      - name: Sign (ad-hoc) and zip
+        run: |
+          mkdir -p dist
+          cp -R build/Swarm8_artefacts/Release/VST3/Swarm8.vst3 dist/
+          cp -R build/Swarm8_artefacts/Release/Standalone/Swarm8.app dist/
+          codesign --force --deep -s - dist/Swarm8.vst3
+          codesign --force --deep -s - dist/Swarm8.app
+          cd dist
+          ditto -c -k --keepParent Swarm8.vst3 ../Swarm8-VST3-mac.zip
+          ditto -c -k --keepParent Swarm8.app  ../Swarm8-Standalone-mac.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Swarm8-mac
+          path: "*.zip"
