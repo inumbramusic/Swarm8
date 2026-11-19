@@ -1,4 +1,4 @@
-name: Build macOS (universal: Intel + Apple Silicon)
+name: Build macOS
 
 on:
   push:
