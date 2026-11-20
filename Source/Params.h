@@ -40,6 +40,8 @@ enum P
     pLfoRate, pLfoShape, pLfoPitch, pLfoSwarm, pLfoCut,
     // OUTPUT
     pWidth, pRevMix, pRevSize, pRevDamp, pVolume,
+    // VOICE
+    pVoiceMode, pVoices, pMorphTime, pMorphSync, pMorphCurve, pStagger, pChordSpread, pChordLatch,
     NumParams
 };
 
@@ -115,6 +117,15 @@ inline constexpr ParamDef kParams[NumParams] = {
     { "revSize",  "Size",           "OUTPUT",   PType::Float,  0.f,    1.f,    0.6f,   0.f,  nullptr,                        "",     -1 },
     { "revDamp",  "Damping",        "OUTPUT",   PType::Float,  0.f,    1.f,    0.5f,   0.f,  nullptr,                        "",     -1 },
     { "volume",   "Volume",         "OUTPUT",   PType::Float,  -48.f,  6.f,    -6.f,   0.f,  nullptr,                        "dB",    7 },
+
+    { "voiceMode","Voice Mode",     "VOICE",    PType::Choice, 0.f,    2.f,    0.f,    0.f,  "Mono|Poly|Chord",        "",     -1 },
+    { "voices",   "Poly Voices",    "VOICE",    PType::Int,    1.f,    8.f,    6.f,    0.f,  nullptr,                        "",     -1 },
+    { "morphTime","Morph Time",     "VOICE",    PType::Float,  0.f,    20.f,   1.5f,   2.f,  nullptr,                        "s",    24 },
+    { "morphSync","Morph Sync",     "VOICE",    PType::Choice, 0.f,    7.f,    0.f,    0.f,  "Free|1/16|1/8|1/4|1/2|1 Bar|2 Bars|4 Bars", "", -1 },
+    { "morphCurve","Morph Curve",   "VOICE",    PType::Choice, 0.f,    3.f,    1.f,    0.f,  "Linear|Smooth|Slow Start|Fast Start", "", -1 },
+    { "stagger",  "Stagger",        "VOICE",    PType::Float,  0.f,    1.f,    0.3f,   0.f,  nullptr,                        "",     25 },
+    { "chordSpread","Octave Spread","VOICE",    PType::Int,    0.f,    2.f,    0.f,    0.f,  nullptr,                        "",     -1 },
+    { "chordLatch","Chord Latch",   "VOICE",    PType::Bool,   0.f,    1.f,    1.f,    0.f,  nullptr,                        "",     -1 },
 };
 
 inline int findParam (const char* id)

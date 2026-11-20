@@ -111,6 +111,8 @@ void Swarm8Processor::handleMidi (const juce::MidiMessage& m)
     else if (m.isPitchWheel())                engine.pitchBend ((float) (m.getPitchWheelValue() - 8192) / 8192.0f);
     else if (m.isChannelPressure())           engine.pressure ((float) m.getChannelPressureValue() / 127.0f);
     else if (m.isAftertouch())                engine.pressure ((float) m.getAfterTouchValue() / 127.0f);
+    else if (m.isSustainPedalOn())            engine.sustain (true);
+    else if (m.isSustainPedalOff())           engine.sustain (false);
     else if (m.isController())
     {
         const int cc = m.getControllerNumber(), val = m.getControllerValue();
@@ -152,6 +154,11 @@ void Swarm8Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         live[i] = ccPending[(size_t) i].load() ? params[(size_t) i]->convertFrom0to1 (ccValue[(size_t) i].load())
                                                : raw[(size_t) i]->load();
     engine.setParams (live);
+
+    if (auto* ph = getPlayHead())
+        if (auto pos = ph->getPosition())
+            if (auto bpm = pos->getBpm())
+                engine.setTempo (*bpm);
 
     auto render = [&] (int start, int len)
     {

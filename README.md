@@ -7,7 +7,24 @@ Swarm8 is built around the same idea as the Dewtron Swarmatron:
 - **Two resonant 4-pole ladder filters**, each with its own envelope. Split routing sends the odd oscillators to Filter A and the even ones to Filter B, panned across the stereo field.
 - Analog drift, a VCA envelope, an LFO and a large built-in reverb.
 
-It's mono and legato like the original. It has 59 automatable parameters and 23 factory presets.
+It's mono and legato like the original. It has 67 automatable parameters and 29 factory presets.
+
+### Voice modes (VOICE section)
+| Mode | What it does |
+|---|---|
+| **Mono** (default) | The classic Swarmatron: one pitch, 8 oscillators, legato. |
+| **Poly** | Up to 8 notes at once (**Poly Voices**). Each note gets its own swarm of oscillators, filters and envelopes. The mod wheel or Swarm ribbon swarms every note together, and the **sustain pedal** works. Glide works between notes that reuse a voice. |
+| **Chord** (Chord Morph, experimental) | Play a chord, then another. Each oscillator **bends from its note in the old chord to its note in the new one**. |
+
+Chord Morph controls:
+- **Morph Time** sets how long a bend takes, from 0 to 20 s (CC24). Set **Morph Sync** to a note value (1/16 up to 4 Bars) and it locks to Cubase's tempo instead.
+- **Morph Curve** sets the shape of the bend. *Linear* is even. *Smooth* eases in and out. *Slow Start* lingers on the old chord and then falls into the new one. *Fast Start* jumps most of the way and then settles.
+- **Stagger** makes the oscillators arrive at different times, so the chord smears and unravels instead of moving as a block (CC25).
+- **Octave Spread** places the spare oscillators an octave or two above the chord tones.
+- **Chord Latch** (on by default) keeps the chord sounding after you let go, so you can play chord, release, play the next chord, and it bends. Stopping Cubase's transport releases it. With Latch off, adding or removing a held note also triggers a morph.
+- The **pitch ribbon** bends the whole chord up and down. It's centred on the middle of the ribbon.
+
+Tips: in Poly mode, 3–4 **Oscillators** per note sounds thick and keeps the CPU load low. The heaviest case, 8 notes × 8 oscillators with two waveforms blended, used about 23% of one CPU core in my tests. An older Intel Mac will use more. For Chord mode, use at least as many Oscillators as there are notes in your chords; the default of 8 covers it.
 
 ### Oscillators: classic first, options after
 The default is the **Saw**, which is what the original uses. The Init preset and the first 14 presets are pure Saw. The **OSC** section adds:
@@ -67,6 +84,9 @@ Every knob name in the plugin window has a **number** next to it if it's mapped 
 | **Swarm** | **CC1 (mod wheel)** and **aftertouch** (amount set by Pressure>Swarm) |
 | Shape | CC22 |
 | Wave Mix | CC23 |
+| Morph Time | CC24 |
+| Stagger | CC25 |
+| Sustain pedal (Poly) | CC64 |
 | Glide | CC5 |
 | Volume | CC7 |
 | Pitch Ribbon position | CC16 |
@@ -107,7 +127,7 @@ Use **TouchOSC** or any app that sends OSC.
 | `/swarm/<id>` | Any parameter, for example `/swarm/cutA` or `/swarm/swLag`. |
 | `/swarm/next`, `/swarm/prev`, `/swarm/preset N` | Preset changes. |
 
-Parameter IDs: `tune fine glide bend ribBase ribRange legato ribbon ribGate swarm swRange swMode swCurve swLag oscs drift atSwarm wave1 wave2 waveMix altWaves shape shapeLfo sub noise route drive keyTrack velFilt cutA resA envA cutB resB envB atkA decA susA relA atkB decB susB relB atk dec sus rel drone velAmp lfoRate lfoShape lfoPitch lfoSwarm lfoCut width revMix revSize revDamp volume`
+Parameter IDs: `tune fine glide bend ribBase ribRange legato ribbon ribGate swarm swRange swMode swCurve swLag oscs drift atSwarm wave1 wave2 waveMix altWaves shape shapeLfo sub noise route drive keyTrack velFilt cutA resA envA cutB resB envB atkA decA susA relA atkB decB susB relB atk dec sus rel drone velAmp lfoRate lfoShape lfoPitch lfoSwarm lfoCut width revMix revSize revDamp volume voiceMode voices morphTime morphSync morphCurve stagger chordSpread chordLatch`
 
 You can also right-click any knob in the plugin to see its OSC address.
 - If the swarm feels upside-down, invert the XY pad's Y axis in TouchOSC.

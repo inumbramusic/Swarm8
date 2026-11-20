@@ -164,9 +164,9 @@ Swarm8Editor::Swarm8Editor (Swarm8Processor& p)
 
     // ---- build controls from the parameter table ----------------------------
     const char* rowDefs[4][4] = { { "OSC", "SWARM", nullptr, nullptr },
-                                  { "PITCH", "FILTER", "FILTER A", "FILTER B" },
-                                  { "ENV A", "ENV B", "LFO", nullptr },
-                                  { "AMP", "OUTPUT", nullptr, nullptr } };
+                                  { "VOICE", "PITCH", nullptr, nullptr },
+                                  { "FILTER", "FILTER A", "FILTER B", "LFO" },
+                                  { "ENV A", "ENV B", "AMP", "OUTPUT" } };
     for (auto& rd : rowDefs)
     {
         std::vector<Group> row;
@@ -267,8 +267,8 @@ Swarm8Editor::Swarm8Editor (Swarm8Processor& p)
     addAndMakeVisible (latchBtn);
 
     setResizable (true, true);
-    setResizeLimits (960, 720, 2000, 1500);
-    setSize (1200, 900);
+    setResizeLimits (1000, 720, 2200, 1500);
+    setSize (1240, 860);
     startTimerHz (30);
 }
 
@@ -317,7 +317,7 @@ void Swarm8Editor::resized()
     learnLabel.setBounds (top.reduced (8, 0));
     area.removeFromTop (8);
 
-    ribbonArea = area.removeFromBottom (juce::jmax (130, area.getHeight() / 6));
+    ribbonArea = area.removeFromBottom (juce::jmax (120, area.getHeight() / 7));
     area.removeFromBottom (8);
     {
         auto r = ribbonArea.reduced (10);
@@ -449,6 +449,18 @@ void Swarm8Editor::timerCallback()
                                             : "OSC port unavailable - try another",
                       juce::dontSendNotification);
     oscLabel.setColour (juce::Label::textColourId, proc.isOscConnected() ? colours::dim : juce::Colours::orangered);
+
+    const int vm = juce::roundToInt (proc.apvts.getRawParameterValue ("voiceMode")->load());
+    for (auto& c : controls)
+    {
+        bool relevant = true;
+        if (c->index == pVoices) relevant = vm == 1;
+        if (c->index == pMorphTime || c->index == pMorphSync || c->index == pMorphCurve
+            || c->index == pStagger || c->index == pChordSpread || c->index == pChordLatch) relevant = vm == 2;
+        if (c->index == pLegato || c->index == pDrone) relevant = vm != 1;
+        const float alpha = relevant ? 1.0f : 0.35f;
+        if (c->main()->getAlpha() != alpha) { c->main()->setAlpha (alpha); c->label.setAlpha (alpha); }
+    }
 
     pitchRibbon.repaint();
     swarmRibbon.repaint();
