@@ -202,6 +202,9 @@ Swarm8Editor::Swarm8Editor (Swarm8Processor& p)
                     c->button->setClickingTogglesState (true);
                     addAndMakeVisible (*c->button);
                     c->bAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, d.id, *c->button);
+                    auto* btn = c->button.get();
+                    btn->onStateChange = [btn] { btn->setButtonText (btn->getToggleState() ? "On" : "Off"); };
+                    btn->setButtonText (btn->getToggleState() ? "On" : "Off");
                 }
                 else
                 {
@@ -224,8 +227,12 @@ Swarm8Editor::Swarm8Editor (Swarm8Processor& p)
     }
 
     // ---- top bar -------------------------------------------------------------
-    titleLabel.setText ("SWARM8", juce::dontSendNotification);
-    titleLabel.setFont (juce::Font (juce::FontOptions (22.0f, juce::Font::bold)));
+    #ifdef JucePlugin_VersionString
+    titleLabel.setText (juce::String ("SWARM8  v") + JucePlugin_VersionString, juce::dontSendNotification);
+   #else
+    titleLabel.setText ("SWARM8  dev", juce::dontSendNotification);
+   #endif
+    titleLabel.setFont (juce::Font (juce::FontOptions (20.0f, juce::Font::bold)));
     titleLabel.setColour (juce::Label::textColourId, colours::accent);
     addAndMakeVisible (titleLabel);
 
@@ -316,7 +323,7 @@ void Swarm8Editor::resized()
     auto area = getLocalBounds().reduced (10);
 
     auto top = area.removeFromTop (34);
-    titleLabel.setBounds (top.removeFromLeft (120));
+    titleLabel.setBounds (top.removeFromLeft (170));
     prevBtn.setBounds (top.removeFromLeft (30).reduced (0, 3));
     presetBox.setBounds (top.removeFromLeft (220).reduced (4, 3));
     nextBtn.setBounds (top.removeFromLeft (30).reduced (0, 3));
@@ -464,10 +471,11 @@ void Swarm8Editor::timerCallback()
     for (auto& c : controls)
     {
         bool relevant = true;
-        if (c->index == pVoices) relevant = vm == 1;
-        if (c->index == pMorphTime || c->index == pMorphSync || c->index == pMorphCurve
-            || c->index == pStagger || c->index == pChordSpread || c->index == pChordLatch) relevant = vm == 2;
-        if (c->index == pLegato || c->index == pDrone) relevant = vm != 1;
+        if (c->index == pVoices) relevant = vm == 1 || vm == 3;
+        if (c->index == pMorphTime || c->index == pMorphSync || c->index == pMorphCurve || c->index == pStagger)
+            relevant = vm == 2 || vm == 3;
+        if (c->index == pChordSpread || c->index == pChordLatch) relevant = vm == 2;
+        if (c->index == pLegato || c->index == pDrone) relevant = vm == 0 || vm == 2;
         const float alpha = relevant ? 1.0f : 0.35f;
         if (c->main()->getAlpha() != alpha) { c->main()->setAlpha (alpha); c->label.setAlpha (alpha); }
     }

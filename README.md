@@ -7,13 +7,16 @@ Swarm8 is built around the same idea as the Dewtron Swarmatron:
 - **Two resonant 4-pole ladder filters**, each with its own envelope. Split routing sends the odd oscillators to Filter A and the even ones to Filter B, panned across the stereo field.
 - Analog drift, a VCA envelope, an LFO and a large built-in reverb.
 
-It's mono and legato like the original. It has 67 automatable parameters and 8 factory presets: Classic Swarm, three Poly presets, three Chord presets and Init.
+It's mono and legato like the original. It has 67 automatable parameters and 9 factory presets: Classic Swarm, three Poly, three Chord, Duo Bend and Finger Bend (6).
+
+**Check your version:** the plugin window shows the version next to the name (this is **v1.4.0**). If Cubase shows an older number or no number, it's still loading an old build.
 
 ### Voice modes (VOICE section)
 | Mode | What it does |
 |---|---|
 | **Mono** (default) | The classic Swarmatron: one pitch, 8 oscillators, legato. |
-| **Poly** | Up to 8 notes at once (**Poly Voices**). Each note gets its own swarm of oscillators, filters and envelopes. The mod wheel or Swarm ribbon swarms every note together, and the **sustain pedal** works. Glide works between notes that reuse a voice. |
+| **Poly** | Up to 8 notes at once (**Voices**). Each note gets its own swarm of oscillators, filters and envelopes. The mod wheel or Swarm ribbon swarms every note together, and the **sustain pedal** works. Glide works between notes that reuse a voice. |
+| **Bend** | **Voices** sets how many notes sound at once. Each new note gets a voice that **bends in from the previous note**, while the notes already sounding stay put. When all voices are in use, the **oldest voice bends to the new note**. With 2 voices (**Duo Bend**): play C and you hear C. Add G and a voice bends from C to G while C stays. Add E and the C voice bends to E, leaving G + E. With 6 voices (**Finger Bend**), each finger adds a voice, up to 6. Bend speed comes from **Morph Time / Sync / Curve / Stagger**. Releasing a key releases its voice. |
 | **Chord** (Chord Morph, experimental) | Play a chord, then another. Each oscillator **bends from its note in the old chord to its note in the new one**. |
 
 Chord Morph controls:
@@ -21,7 +24,7 @@ Chord Morph controls:
 - **Morph Curve** sets the shape of the bend. *Linear* is even. *Smooth* eases in and out. *Slow Start* lingers on the old chord and then falls into the new one. *Fast Start* jumps most of the way and then settles.
 - **Stagger** makes the oscillators arrive at different times, so the chord smears and unravels instead of moving as a block (CC25).
 - **Octave Spread** places the spare oscillators an octave or two above the chord tones.
-- **Chord Latch** (on by default) keeps the chord sounding after you let go, so you can play chord, release, play the next chord, and it bends. Stopping Cubase's transport, the **Panic** button or any all-notes-off message releases it. With Latch off, adding or removing a held note also triggers a morph.
+- **Chord Latch** (off by default) keeps the chord sounding after you let go, so you can play chord, release, play the next chord, and it bends. Stopping Cubase's transport, the **Panic** button or any all-notes-off message releases it. With Latch off, adding or removing a held note also triggers a morph.
 - The **pitch ribbon** bends the whole chord up and down. It's centred on the middle of the ribbon.
 
 Tips: in Poly mode, 3–4 **Oscillators** per note sounds thick and keeps the CPU load low. The heaviest case, 8 notes × 8 oscillators with two waveforms blended, used about 23% of one CPU core in my tests. An older Intel Mac will use more. For Chord mode, use at least as many Oscillators as there are notes in your chords; the default of 8 covers it.
@@ -92,7 +95,7 @@ Every knob name in the plugin window has a **number** next to it if it's mapped 
 | Glide | CC5 |
 | Volume | CC7 |
 | Pitch Ribbon position | CC16 |
-| Ribbon Touch (plays with no keys) | CC17 (64 or above = on) |
+| Ribbon Touch (plays with no keys) | none by default. Use MIDI Learn if you want it, but beware: a CC that stays high holds the note on. |
 | Analog Drift | CC18 |
 | Reverb | CC19 |
 | Swarm Range | CC20 |

@@ -155,7 +155,7 @@ struct Reverb
     {
         static const float base[N] = { 1153, 1327, 1559, 1801, 2027, 2311, 2593, 2879 };
         const float scale = (0.55f + 1.45f * size) * sr / 44100.0f;
-        const float rt60  = 0.7f + size * size * 13.0f;
+        const float rt60  = 0.4f + size * size * 7.0f;   // 0.4 s .. 7.4 s
         for (int i = 0; i < N; ++i)
         {
             len[i] = base[i] * scale;
@@ -204,7 +204,7 @@ class SwarmEngine
 public:
     static constexpr int kOscs = 8;
     static constexpr int kVoices = 8;
-    enum Mode { Mono = 0, Poly = 1, Chord = 2 };
+    enum Mode { Mono = 0, Poly = 1, Chord = 2, Bend = 3 };
 
     //==========================================================================
     struct Voice
@@ -282,7 +282,7 @@ public:
     const float* params() const { return p; }
     void setTempo (double bpm) { if (bpm > 1.0) tempo = (float) bpm; }
 
-    int mode() const { return std::clamp ((int) std::lround (p[pVoiceMode]), 0, 2); }
+    int mode() const { return std::clamp ((int) std::lround (p[pVoiceMode]), 0, 3); }
 
     // --- MIDI ----------------------------------------------------------------
     void noteOn (int note, float vel)
@@ -290,6 +290,7 @@ public:
         checkModeChange();
         const int m = mode();
         if (m == Poly) { polyNoteOn (note, vel); return; }
+        if (m == Bend) { bendNoteOn (note, vel); return; }
 
         const int heldBefore = numNotes;
         for (int i = 0; i < numNotes; ++i) if (notes[i] == note) { removeNote (i); break; }
@@ -310,7 +311,7 @@ public:
     void noteOff (int note)
     {
         const int m = mode();
-        if (m == Poly)
+        if (m == Poly || m == Bend)
         {
             for (auto& v : voices)
                 if (v.gate && v.note == note && ! v.isRibbon)
@@ -326,14 +327,14 @@ public:
 
     void allNotesOff()
     {
-        numNotes = 0; chordActive = false;
+        numNotes = 0; chordActive = false; lastBendNote = -1;
         for (auto& v : voices) if (! v.isRibbon && (v.gate || v.sustained)) { v.gate = false; v.sustained = false; v.gateOffAll(); }
     }
 
     // stop everything that could be held: keys, pedal, chord latch, ribbon voice
     void panic()
     {
-        numNotes = 0; chordActive = false; chordChanged = false; sustainDown = false; retrigger = false;
+        numNotes = 0; chordActive = false; chordChanged = false; sustainDown = false; retrigger = false; lastBendNote = -1;
         for (auto& v : voices) { v.gate = false; v.sustained = false; v.isRibbon = false; v.gateOffAll(); }
         ribbonVoice = -1; prevRibGate = false;
         prevGate = false; prevAmpGate = false;
@@ -380,6 +381,7 @@ public:
 
         if (m == Mono)        blockMono (offset, ribGate, ribPitch, fromRibbon);
         else if (m == Chord)  blockChord (offset, ribGate);
+        else if (m == Bend)   blockBend (offset, ribGate);
         else                  blockPoly (offset, ribGate, ribPitch);
 
         // ---- shared per-block values --------------------------------------
@@ -389,7 +391,7 @@ public:
         s.wave1  = (int) std::lround (p[pWave1]);
         s.wave2  = (int) std::lround (p[pWave2]);
         s.altWaves = p[pAltWaves] > 0.5f;
-        s.chordMode = m == Chord;
+        s.chordMode = m == Chord || m == Bend;
         s.morphCurve = (int) std::lround (p[pMorphCurve]);
         s.waveMix = p[pWaveMix];
         s.subLvl = p[pSub]; s.noiseLvl = p[pNoise];
@@ -428,7 +430,7 @@ public:
         s.norm = s.route == 0 ? 0.75f / std::sqrt (std::max (1.0f, s.nOsc * 0.5f))
                               : 0.55f / std::sqrt ((float) s.nOsc);
 
-        const float volT  = std::pow (10.0f, p[pVolume] / 20.0f) * (m == Poly ? 0.5f : 1.0f);
+        const float volT  = std::pow (10.0f, p[pVolume] / 20.0f) * (m == Poly ? 0.5f : (m == Bend ? 0.85f / std::sqrt ((float) maxVoices()) : 1.0f));
         const float mix   = p[pRevMix];
         const float dryG  = std::cos (mix * kPi * 0.5f), wetG = std::sin (mix * kPi * 0.5f);
         const float swTgt = std::clamp (p[pSwarm] + press * p[pAtSwarm], 0.0f, 1.0f);
@@ -474,7 +476,7 @@ private:
         if (lastMode == -1) { lastMode = m; return; }
         for (auto& v : voices) { v.gate = false; v.sustained = false; v.isRibbon = false; v.gateOffAll(); }
         numNotes = 0; prevGate = false; prevAmpGate = false; chordActive = false; chordSize = 0;
-        ribbonVoice = -1; prevRibGate = false;
+        ribbonVoice = -1; prevRibGate = false; lastBendNote = -1;
         lastMode = m;
     }
 
@@ -638,6 +640,70 @@ private:
             v.target = v.noteBase + offset;
             if (i >= maxV && v.gate) { v.gate = false; v.sustained = false; v.gateOffAll(); }
         }
+    }
+
+    // ---------------- BEND (Duo / Finger) ----------------
+    // Each new note gets a voice that bends to it from the previous note, while
+    // the voices already sounding keep their notes. At the voice limit, the
+    // OLDEST voice bends to the new note instead.
+    void bendNoteOn (int note, float vel)
+    {
+        const int maxV = maxVoices();
+        for (int i = 0; i < maxV; ++i)
+            if (voices[i].gate && voices[i].note == note) return;   // already playing this key
+
+        int held = 0; bool anySounding = false;
+        for (int i = 0; i < kVoices; ++i)
+        {
+            if (i < maxV && (voices[i].gate || voices[i].sustained)) ++held;
+            if (! voices[i].idle()) anySounding = true;
+        }
+
+        int idx = -1; bool steal = false;
+        if (held < maxV)
+        {
+            for (int i = 0; i < maxV && idx < 0; ++i) if (voices[i].idle()) idx = i;
+            uint32_t oldest = 0xFFFFFFFFu;
+            if (idx < 0)
+                for (int i = 0; i < maxV; ++i)
+                    if (! voices[i].gate && ! voices[i].sustained && voices[i].stamp < oldest) { oldest = voices[i].stamp; idx = i; }
+        }
+        if (idx < 0)
+        {
+            steal = true;
+            uint32_t oldest = 0xFFFFFFFFu;
+            for (int i = 0; i < maxV; ++i)
+                if (voices[i].stamp < oldest) { oldest = voices[i].stamp; idx = i; }
+        }
+        if (idx < 0) return;
+
+        Voice& v = voices[idx];
+        const float T = morphSeconds();
+        const float tgt = (float) note;
+        const bool haveSrc = anySounding && lastBendNote >= 0;
+        for (int i = 0; i < kOscs; ++i)
+        {
+            const float from = steal ? v.oscPitch[i] : (haveSrc ? (float) lastBendNote : tgt);
+            v.mStart[i] = from; v.mTarget[i] = tgt; v.oscPitch[i] = from;
+            v.mDur[i] = std::max (0.002f, T * (1.0f - p[pStagger] * 0.85f * staggerU[i]));
+            if (T < 0.002f) v.oscPitch[i] = tgt;
+        }
+        v.mElapsed = 0;
+        v.morphing = T >= 0.002f;
+        v.note = note; v.velocity = vel;
+        v.gate = true; v.sustained = false; v.isRibbon = false;
+        v.stamp = ++stampCounter;
+        if (! steal) v.gateOnAll();   // new voice; a stolen voice just keeps sounding and bends
+        if (! anySounding) chordOffsetSm = chordOffsetTarget;
+        lastBendNote = note;
+    }
+
+    void blockBend (float offset, bool ribGate)
+    {
+        chordOffsetTarget = offset + (ribGate ? (p[pRibbon] - 0.5f) * p[pRibRange] * 12.0f : 0.0f);
+        const int maxV = maxVoices();
+        for (int i = maxV; i < kVoices; ++i)
+            if (voices[i].gate || voices[i].sustained) { voices[i].gate = false; voices[i].sustained = false; voices[i].gateOffAll(); }
     }
 
     //==========================================================================
@@ -844,7 +910,7 @@ private:
     float velocity = 1, bend = 0, press = 0, tempo = 120;
     bool  prevGate = false, prevAmpGate = false, retrigger = false, pitchInit = false;
     bool  prevRibGate = false, sustainDown = false;
-    int   ribbonVoice = -1, lastMode = -1;
+    int   ribbonVoice = -1, lastMode = -1, lastBendNote = -1;
     uint32_t stampCounter = 0;
     float lastTarget = 48, swarmSm = 0, swarmOut = 0, polyOffset = 0;
     float chordOffsetSm = 0, chordOffsetTarget = 0;

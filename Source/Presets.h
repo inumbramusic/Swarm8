@@ -45,23 +45,33 @@ inline const std::vector<Preset>& factoryPresets()
 
         { "Chord Bend", {      // play a chord, then another: every oscillator glides to its new note
             { "voiceMode", 2.f }, { "morphTime", 2.f }, { "morphCurve", 1.f }, { "stagger", 0.35f },
-            { "chordLatch", 1.f }, { "swarm", 0.06f }, { "swRange", 0.5f }, { "drift", 0.35f },
+            { "chordLatch", 0.f }, { "swarm", 0.06f }, { "swRange", 0.5f }, { "drift", 0.35f },
             { "cutA", 1600.f }, { "resA", 0.25f }, { "cutB", 2400.f }, { "resB", 0.2f },
             { "atk", 0.6f }, { "rel", 3.f }, { "revMix", 0.45f }, { "revSize", 0.8f } } },
 
         { "Chord Melt (1 Bar)", { // tempo-synced: each chord change takes one bar, staggered
             { "voiceMode", 2.f }, { "morphSync", 5.f }, { "morphCurve", 2.f }, { "stagger", 0.7f },
-            { "chordSpread", 1.f }, { "chordLatch", 1.f }, { "swarm", 0.1f }, { "swRange", 1.f },
+            { "chordSpread", 1.f }, { "chordLatch", 0.f }, { "swarm", 0.1f }, { "swRange", 1.f },
             { "cutA", 1100.f }, { "resA", 0.35f }, { "envA", 0.15f }, { "cutB", 1800.f }, { "resB", 0.3f },
             { "atk", 1.f }, { "rel", 4.f }, { "revMix", 0.5f }, { "revSize", 0.85f } } },
 
         { "Chord Snap Swarm", { // fast, snappy chord changes inside a wide swarm
             { "voiceMode", 2.f }, { "morphTime", 0.2f }, { "morphCurve", 3.f }, { "stagger", 0.5f },
-            { "chordLatch", 1.f }, { "swarm", 0.3f }, { "swRange", 7.f }, { "swLag", 1.f },
+            { "chordLatch", 0.f }, { "swarm", 0.3f }, { "swRange", 7.f }, { "swLag", 1.f },
             { "cutA", 1500.f }, { "resA", 0.4f }, { "envA", 0.2f }, { "cutB", 2200.f }, { "resB", 0.3f },
             { "atk", 0.1f }, { "rel", 2.f }, { "revMix", 0.4f } } },
 
-        { "Init", {} },
+        { "Duo Bend", {        // two voices: each new note bends a voice there; the other keeps its note
+            { "voiceMode", 3.f }, { "voices", 2.f }, { "morphTime", 0.9f }, { "morphCurve", 1.f }, { "stagger", 0.3f },
+            { "swarm", 0.08f }, { "swRange", 0.6f }, { "drift", 0.35f },
+            { "cutA", 1500.f }, { "resA", 0.3f }, { "envA", 0.2f }, { "cutB", 2300.f }, { "resB", 0.25f },
+            { "atk", 0.15f }, { "rel", 1.5f }, { "revMix", 0.35f }, { "revSize", 0.6f } } },
+
+        { "Finger Bend (6)", { // one voice per finger (up to 6); every new note bends in from the last one
+            { "voiceMode", 3.f }, { "voices", 6.f }, { "oscs", 4.f }, { "morphTime", 0.6f }, { "morphCurve", 1.f }, { "stagger", 0.4f },
+            { "swarm", 0.1f }, { "swRange", 0.6f }, { "drift", 0.35f },
+            { "cutA", 1600.f }, { "resA", 0.25f }, { "envA", 0.2f }, { "cutB", 2400.f }, { "resB", 0.2f },
+            { "atk", 0.2f }, { "rel", 1.8f }, { "revMix", 0.35f }, { "revSize", 0.6f } } },
     };
     return presets;
 }
