@@ -52,6 +52,9 @@ public:
     void resetCCMapToDefaults();
     int  ccMapVersion() const         { return ccVersion.load(); }
 
+    // releases every note, the chord latch, the sustain pedal and the ribbon touch
+    void requestPanic() { panicRequest.store (true); }
+
     // OSC (for iPad/iPhone control via TouchOSC etc.)
     bool setOscPort (int port);
     int  getOscPort() const   { return oscPort; }
@@ -79,6 +82,9 @@ private:
     // CC values received on the audio thread, pushed to the host on the message thread
     std::array<std::atomic<float>, swarm::NumParams> ccValue;
     std::array<std::atomic<bool>,  swarm::NumParams> ccPending;
+
+    std::atomic<bool> panicRequest { false };
+    bool wasPlaying = false;
 
     juce::OSCReceiver osc;
     int  oscPort = 9000;

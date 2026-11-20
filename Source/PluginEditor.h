@@ -72,7 +72,7 @@ private:
 
     juce::Label titleLabel, oscLabel, oscPortLabel, learnLabel;
     juce::ComboBox presetBox;
-    juce::TextButton prevBtn { "<" }, nextBtn { ">" }, latchBtn { "Latch" }, resetCCBtn { "Reset CCs" };
+    juce::TextButton prevBtn { "<" }, nextBtn { ">" }, latchBtn { "Latch" }, resetCCBtn { "Reset CCs" }, panicBtn { "Panic" };
     Ribbon pitchRibbon, swarmRibbon;
     juce::Rectangle<int> ribbonArea;
     int lastCCVersion = -1, lastLearn = -2, lastProgram = -1;

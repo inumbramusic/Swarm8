@@ -7,7 +7,7 @@ Swarm8 is built around the same idea as the Dewtron Swarmatron:
 - **Two resonant 4-pole ladder filters**, each with its own envelope. Split routing sends the odd oscillators to Filter A and the even ones to Filter B, panned across the stereo field.
 - Analog drift, a VCA envelope, an LFO and a large built-in reverb.
 
-It's mono and legato like the original. It has 67 automatable parameters and 29 factory presets.
+It's mono and legato like the original. It has 67 automatable parameters and 8 factory presets: Classic Swarm, three Poly presets, three Chord presets and Init.
 
 ### Voice modes (VOICE section)
 | Mode | What it does |
@@ -21,13 +21,13 @@ Chord Morph controls:
 - **Morph Curve** sets the shape of the bend. *Linear* is even. *Smooth* eases in and out. *Slow Start* lingers on the old chord and then falls into the new one. *Fast Start* jumps most of the way and then settles.
 - **Stagger** makes the oscillators arrive at different times, so the chord smears and unravels instead of moving as a block (CC25).
 - **Octave Spread** places the spare oscillators an octave or two above the chord tones.
-- **Chord Latch** (on by default) keeps the chord sounding after you let go, so you can play chord, release, play the next chord, and it bends. Stopping Cubase's transport releases it. With Latch off, adding or removing a held note also triggers a morph.
+- **Chord Latch** (on by default) keeps the chord sounding after you let go, so you can play chord, release, play the next chord, and it bends. Stopping Cubase's transport, the **Panic** button or any all-notes-off message releases it. With Latch off, adding or removing a held note also triggers a morph.
 - The **pitch ribbon** bends the whole chord up and down. It's centred on the middle of the ribbon.
 
 Tips: in Poly mode, 3–4 **Oscillators** per note sounds thick and keeps the CPU load low. The heaviest case, 8 notes × 8 oscillators with two waveforms blended, used about 23% of one CPU core in my tests. An older Intel Mac will use more. For Chord mode, use at least as many Oscillators as there are notes in your chords; the default of 8 covers it.
 
 ### Oscillators: classic first, options after
-The default is the **Saw**, which is what the original uses. The Init preset and the first 14 presets are pure Saw. The **OSC** section adds:
+The default is the **Saw**, which is what the original uses. Init, Classic Swarm and the Poly and Chord presets all use Saw. The **OSC** section adds:
 
 | Wave | Shape knob controls |
 |---|---|
@@ -76,6 +76,8 @@ You have two options.
 ---
 
 ## 2. Playing it
+
+**Panic** (top bar, red) stops all sound immediately. It releases held and latched notes, the sustain pedal and a stuck ribbon or iPad touch. Stopping Cubase's transport does the same. Over OSC, send `/swarm/panic`.
 
 Every knob name in the plugin window has a **number** next to it if it's mapped to a CC. **Click any knob's name** (or right-click the knob) to MIDI Learn or clear its CC. Double-click a knob to reset it.
 

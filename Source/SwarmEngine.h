@@ -330,6 +330,15 @@ public:
         for (auto& v : voices) if (! v.isRibbon && (v.gate || v.sustained)) { v.gate = false; v.sustained = false; v.gateOffAll(); }
     }
 
+    // stop everything that could be held: keys, pedal, chord latch, ribbon voice
+    void panic()
+    {
+        numNotes = 0; chordActive = false; chordChanged = false; sustainDown = false; retrigger = false;
+        for (auto& v : voices) { v.gate = false; v.sustained = false; v.isRibbon = false; v.gateOffAll(); }
+        ribbonVoice = -1; prevRibGate = false;
+        prevGate = false; prevAmpGate = false;
+    }
+
     void sustain (bool down)
     {
         sustainDown = down;

@@ -245,6 +245,15 @@ Swarm8Editor::Swarm8Editor (Swarm8Processor& p)
     resetCCBtn.onClick = [this] { proc.resetCCMapToDefaults(); };
     addAndMakeVisible (resetCCBtn);
 
+    panicBtn.setTooltip ("Stop all sound: releases held/latched notes, sustain pedal and ribbon");
+    panicBtn.setColour (juce::TextButton::buttonColourId, juce::Colour (0xff6b1d1d));
+    panicBtn.onClick = [this]
+    {
+        latchBtn.setToggleState (false, juce::sendNotificationSync);
+        proc.requestPanic();
+    };
+    addAndMakeVisible (panicBtn);
+
     for (auto& a : juce::IPAddress::getAllAddresses (false))
         if (! a.toString().startsWith ("127.") && ! a.toString().startsWith ("169.254")) { localIP = a.toString(); break; }
     oscLabel.setFont (juce::Font (juce::FontOptions (12.0f)));
@@ -314,6 +323,7 @@ void Swarm8Editor::resized()
     oscPortLabel.setBounds (top.removeFromRight (60).reduced (4, 5));
     oscLabel.setBounds (top.removeFromRight (230));
     resetCCBtn.setBounds (top.removeFromRight (90).reduced (4, 4));
+    panicBtn.setBounds (top.removeFromRight (70).reduced (4, 4));
     learnLabel.setBounds (top.reduced (8, 0));
     area.removeFromTop (8);
 

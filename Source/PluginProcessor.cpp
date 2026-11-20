@@ -107,7 +107,7 @@ void Swarm8Processor::handleMidi (const juce::MidiMessage& m)
 {
     if (m.isNoteOn())                         engine.noteOn (m.getNoteNumber(), m.getFloatVelocity());
     else if (m.isNoteOff())                   engine.noteOff (m.getNoteNumber());
-    else if (m.isAllNotesOff() || m.isAllSoundOff()) engine.allNotesOff();
+    else if (m.isAllNotesOff() || m.isAllSoundOff()) engine.panic();
     else if (m.isPitchWheel())                engine.pitchBend ((float) (m.getPitchWheelValue() - 8192) / 8192.0f);
     else if (m.isChannelPressure())           engine.pressure ((float) m.getChannelPressureValue() / 127.0f);
     else if (m.isAftertouch())                engine.pressure ((float) m.getAfterTouchValue() / 127.0f);
@@ -153,12 +153,24 @@ void Swarm8Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     for (int i = 0; i < NumParams; ++i)
         live[i] = ccPending[(size_t) i].load() ? params[(size_t) i]->convertFrom0to1 (ccValue[(size_t) i].load())
                                                : raw[(size_t) i]->load();
-    engine.setParams (live);
-
+    bool doPanic = panicRequest.exchange (false);
     if (auto* ph = getPlayHead())
         if (auto pos = ph->getPosition())
-            if (auto bpm = pos->getBpm())
-                engine.setTempo (*bpm);
+        {
+            if (auto bpm = pos->getBpm()) engine.setTempo (*bpm);
+            const bool playing = pos->getIsPlaying();
+            if (wasPlaying && ! playing) doPanic = true;   // transport stopped: release latched chords etc.
+            wasPlaying = playing;
+        }
+    if (doPanic)
+    {
+        live[pRibGate] = 0.0f;                           // drop a stuck ribbon/iPad touch too
+        ccValue[(size_t) pRibGate].store (0.0f);
+        ccPending[(size_t) pRibGate].store (true);
+        engine.setParams (live);
+        engine.panic();
+    }
+    engine.setParams (live);
 
     auto render = [&] (int start, int len)
     {
@@ -272,6 +284,8 @@ void Swarm8Processor::oscMessageReceived (const juce::OSCMessage& m)
     }
     else if (addr == "/swarm/touch" || addr == "/swarm/gate")
         setParamNorm (pRibGate, arg (0) > 0.5f ? 1.0f : 0.0f);
+    else if (addr == "/swarm/panic")
+        requestPanic();
     else if (addr == "/swarm/preset")
         setCurrentProgram (juce::jlimit (0, getNumPrograms() - 1, (int) arg (0)));
     else if (addr == "/swarm/next")
